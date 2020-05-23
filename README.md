@@ -1,2 +1,83 @@
 # shapes-to-poly
-python program that converts a each polygon/multipolygon in an input shapefile into a .poly file
+python3 program that converts a each polygon/multipolygon in an input shapefile into a .poly file
+
+> Where is a .poly used?  
+> Mainly by osmconvert to clip out custom OSM .pbf data, and then to use the .pbf in routing applications like OSRM / OpenTripPlanner.
+> See: https://wiki.openstreetmap.org/wiki/Osmconvert#Clipping_based_on_a_Polygon
+
+
+## Install required packages:
+```
+pip3 install shapely geopandas
+```
+
+Note: If on windows and using anaconda / miniconda, then conda is better than pip as it takes care of some GDAL dependencies:
+```
+conda insall shapely geopandas
+```
+
+## Usage
+You can run `python3 shapes-to-poly.py -h` to display the same options documentation as below:
+```
+usage: shapes-to-poly.py [-h] [-n NAMINGCOLUMN] [-b BUFFER]
+                         [-s SIMPLIFICATION] [-c CRS] [-l LAYER] [-g]
+                         shape
+
+positional arguments:
+  shape                 filename or URL of shapefile to convert to .poly(s).
+                        Can be .geojson, .shp, .gpkg or any format supported
+                        by geopandas / fiona packages.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -n NAMINGCOLUMN, --namingColumn NAMINGCOLUMN
+                        If there are multiple shapes, what is the unique
+                        field/column in the shapefile to name each .poly file
+                        by (default:will just name them shape_1.poly
+                        shape_2.poly etc
+  -b BUFFER, --buffer BUFFER
+                        buffer each shape by this many kms
+  -s SIMPLIFICATION, --simplification SIMPLIFICATION
+                        simplification factor to reduce output filesize. Best
+                        used in conjunction with buffer. Typical values: for
+                        country-level: 5000
+  -c CRS, --crs CRS     CRS projection to use for kms calculations. Default:
+                        EPSG:7755 for India
+  -l LAYER, --layer LAYER
+                        specify name of layer if loaded shapefile is multi-
+                        layered
+  -g, --geojson         also create .geojson to preview
+```
+
+### Sample commands
+
+If you have a shape saved as a shape.geojson file:
+```
+python3 shapes-to-poly.py shape.geojson
+```
+
+Buffer by 50 km:
+```
+python3 shapes-to-poly.py -b 50 shape.geojson
+```
+
+Buffer by 50km, and simplify by a factor of 5000 (ok at country level):
+```
+python3 shapes-to-poly.py -b 50 -s 5000 shape.geojson
+```
+
+If you have a ESRI shapefile (sample.shp +) with multiple shapes and a column like "S_NAME" holding the name for each shape,
+```
+python3 shapes-to-poly.py -b 50 -s 5000 -n "S_NAME" sample.shp
+```
+
+If your shape is not in India and you want to apply a diffrent CRS for 100km buffering, for example: EPSG:1324 for USA:
+```
+python3 shapes-to-poly.py -c "EPSG:1324" -b 100 shape.geojson
+```
+
+### Features
+- buffering : If you want to apply ex: 100 kms buffer to your shape before converting to .poly, use `-b 100`
+- handles multi-polygons : The .poly output will also be multi-polygon. Just make sure to keep the shape(s) saved as a multi-polygon in your input file.
+- simplification of geometry : Esp recommended in confunjction with buffering: It cuts down complexity for other processes downstream like osmconvert
+
