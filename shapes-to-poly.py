@@ -1,79 +1,65 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[15]:
-
-
 import geopandas as gpd
 import shapely.geometry
 import os
-# dependency to install:
-# pip install descartes
+import time
+import argparse
 
+start = time.time()
 
-# In[16]:
+parser = argparse.ArgumentParser()
+parser.add_argument("shape", help="filename or URL of shapefile to convert to .poly(s). Can be .geojson, .shp, .gpkg or any format supported by geopandas / fiona packages.", type=str)
+parser.add_argument("-n", "--namingColumn", help="If there are multiple shapes, what is the unique field/column in the shapefile to name each .poly file by (default:will just name them shape_1.poly shape_2.poly etc", type=str, default='')
+parser.add_argument("-b", "--buffer", help="buffer each shape by this many kms", type=float, default=0)
+parser.add_argument("-s", "--simplification", help="simplification factor to reduce output filesize. Best used in conjunction with buffer. Typical values: for country-level: 5000", type=float, default=0)
+parser.add_argument("-c", "--crs", help="CRS projection to use for kms calculations. Default: EPSG:7755 for India", type=str, default='EPSG:7755')
+parser.add_argument("-l", "--layer", help="specify name of layer if loaded shapefile is multi-layered", type=str, default='')
+parser.add_argument("-g", "--geojson", help="also create .geojson to preview", action="store_true")
 
+args = parser.parse_args()
 
-states_shapefile = 'states-shapefile-orig/IND_adm1.shp'
-polyFolder = 'states_poly'
+print(args.shape)
 
-buffer_kms = 50
-simplification_factor = 5000
-
-
-# In[20]:
-
-
+polyFolder = 'output'
 os.makedirs(polyFolder, exist_ok=True)
 
+#print('buffer kms:', args.buffer)
+#simplification_factor = args.simplification or 0
+#print('simplification factor:', args.simplification)
 
-# In[3]:
-
-
-gdf = gpd.read_file(states_shapefile)
-
-
-# ### convert CRS to 7755 (india meters)
-
-# In[4]:
+if(args.layer):
+    gdf = gpd.read_file(args.shape, layer=args.layer)
+else:
+    gdf = gpd.read_file(args.shape)
 
 
-gdf2 = gdf.to_crs('EPSG:7755')
+# convert CRS to the CRS specified in options.. only if there is buffering or simplification involved
+if args.buffer or args.simplification:
+    gdf2 = gdf.to_crs(args.crs)
 
+    del gdf
 
-# In[5]:
+    gdf3 = gdf2.copy()
 
+    if(args.buffer):
+        gdf3.geometry = gdf3.geometry.buffer(args.buffer*1000)
 
-del gdf
+    if(args.simplification):
+        gdf3.geometry = gdf3.geometry.simplify(args.simplification, preserve_topology=True)
 
+    del gdf2
 
-# In[6]:
+    # convert back to lat-longs
+    gdf4 = gdf3.to_crs('EPSG:4326')
+    del gdf3
 
+else:
+    gdf4 = gdf
 
-gdf3 = gdf2.copy()
-gdf3.geometry = gdf3.geometry.buffer(buffer_kms*1000).simplify(5000, preserve_topology=True)
-
-
-# In[7]:
-
-
-del gdf2
-
-
-# In[9]:
-
-
-gdf4 = gdf3.to_crs('EPSG:4326')
-
-
-# In[11]:
-
-
-del gdf3
-
-
-# In[12]:
-
+    
+# now main conversion to .poly
 
 def pgon2poly(p,name):
     content = name
@@ -83,30 +69,31 @@ def pgon2poly(p,name):
     return content
 
 
-# In[19]:
-
-
 for i,row in gdf4.iterrows():
-    name = row['NAME_1'].lower().replace(' ','_')
-    print(name)
-    if type(row.geometry) == shapely.geometry.multipolygon.MultiPolygon:
+    if args.namingColumn:
+        name = row[args.namingColumn].replace(' ','_')
+    else:
+        name = "shape_{}".format(i+1)
+    print(i+1, name)
+    if type(row.geometry) == shapely.geometry.multipolygon.MultiPolygon :
         content = name
         # print(row.geometry)
         for N,b in enumerate(row.geometry.geoms):
             content += '\n' + pgon2poly(b,'area_{}'.format(N+1))
         content += '\nEND'
-    else:
+    elif type(row.geometry) == shapely.geometry.polygon.Polygon :
         content = name
         content += '\n' + pgon2poly(row.geometry,'area_1')
         content += '\nEND'
+    else:
+        print("Cannot make .poly of a non-polygonal shape: {} . Skipping.".format(type(row.geometry)))
     
     with open(os.path.join(polyFolder,'{}.poly'.format(name)),'w') as f:
         f.write(content)
-    
 
+if args.geojson:
+    gdf4.to_file(os.path.join(polyFolder,"{}.geojson".format(args.shape)), driver="GeoJSON")
 
-# In[ ]:
-
-
-
+end = time.time()    
+print("Done! Check the output/ folder. Took {} secs".format(round(end-start,3)))
 
