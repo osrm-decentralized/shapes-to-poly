@@ -16,6 +16,22 @@ Note: If on windows and using anaconda / miniconda, then conda is better than pi
 conda insall shapely geopandas
 ```
 
+In linux/ubuntu, there can be extra dependencies of geopandas on GDAL. Here's one way to install them which worked for me:
+
+```
+sudo apt-get install python3-pip libgdal-dev locales build-essential python3-dev python3-setuptools python3-wheel
+pip3 install GDAL==2.4.2
+```
+
+If the last line errored out, try this:
+```
+pip3 install GDAL=="`gdal-config --version`.*"
+```
+
+Alternative ways:
+- See https://github.com/nextgis/pygdal
+
+
 ## Usage
 You can run `python3 shapes-to-poly.py -h` to display the same options documentation as below:
 ```
