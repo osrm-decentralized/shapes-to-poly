@@ -73,7 +73,7 @@ python3 shapes-to-poly.py -c "EPSG:1324" -b 100 shape.geojson
 - simplification of geometry : Esp recommended in confunjction with buffering: It cuts down complexity for other processes downstream like osmconvert
 
 
-## Install required packages:
+## Installing requirements before running:
 ```
 pip3 install geopandas
 ```
@@ -97,13 +97,13 @@ If the last line errored out, try this:
 pip3 install GDAL=="`gdal-config --version`.*"
 ```
 
-### Alternative ways:
+### Alternative ways
 - See https://github.com/nextgis/pygdal
 
-### Using Docker :
+### Using Docker
 Ensure that your shapefile is present in the same folder (or in a folder beneath)
 
-Open a terminal/command prompt, navigate it to current folder, and run these commands:
+Open a terminal/command prompt, navigate it to current folder, and run these commands if for the first time:
 ```
 docker build -t shapes-to-poly1 .
 docker run -v $(pwd):/app -it shapes-to-poly1
@@ -114,4 +114,8 @@ You can now run the same python commands as given above. The outputs will be sav
 
 Once done, you can get out with the `exit` command.
 
+To run this again, you won't need the "build" command unless you purge your local docker images:
+```
+docker run -v $(pwd):/app -it shapes-to-poly1
+```
 Shout-out to https://github.com/thinkWhere/GDAL-Docker for making a gdal-friendly docker container readily available.
