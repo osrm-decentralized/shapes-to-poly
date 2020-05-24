@@ -55,7 +55,7 @@ if args.buffer or args.simplification:
     gdf4 = gdf3.to_crs('EPSG:4326')
     del gdf3
 
-else:
+else: # skip CRS conversion if user didn't want to buffer or simplify
     gdf4 = gdf
 
     

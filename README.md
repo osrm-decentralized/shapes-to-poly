@@ -6,31 +6,6 @@ python3 program that converts a each polygon/multipolygon in an input shapefile 
 > See: https://wiki.openstreetmap.org/wiki/Osmconvert#Clipping_based_on_a_Polygon
 
 
-## Install required packages:
-```
-pip3 install shapely geopandas
-```
-
-Note: If on windows and using anaconda / miniconda, then conda is better than pip as it takes care of some GDAL dependencies:
-```
-conda insall shapely geopandas
-```
-
-In linux/ubuntu, there can be extra dependencies of geopandas on GDAL. Here's one way to install them which worked for me:
-
-```
-sudo apt-get install python3-pip libgdal-dev locales build-essential python3-dev python3-setuptools python3-wheel
-pip3 install GDAL==2.4.2
-```
-
-If the last line errored out, try this:
-```
-pip3 install GDAL=="`gdal-config --version`.*"
-```
-
-Alternative ways:
-- See https://github.com/nextgis/pygdal
-
 
 ## Usage
 You can run `python3 shapes-to-poly.py -h` to display the same options documentation as below:
@@ -65,7 +40,7 @@ optional arguments:
   -g, --geojson         also create .geojson to preview
 ```
 
-### Sample commands
+## Sample commands
 
 If you have a shape saved as a shape.geojson file:
 ```
@@ -92,8 +67,51 @@ If your shape is not in India and you want to apply a diffrent CRS for 100km buf
 python3 shapes-to-poly.py -c "EPSG:1324" -b 100 shape.geojson
 ```
 
-### Features
+## Features
 - buffering : If you want to apply ex: 100 kms buffer to your shape before converting to .poly, use `-b 100`
 - handles multi-polygons : The .poly output will also be multi-polygon. Just make sure to keep the shape(s) saved as a multi-polygon in your input file.
 - simplification of geometry : Esp recommended in confunjction with buffering: It cuts down complexity for other processes downstream like osmconvert
 
+
+## Install required packages:
+```
+pip3 install geopandas
+```
+
+### Windows
+Note: If on windows and using anaconda / miniconda, then conda is better than pip as it takes care of some GDAL dependencies:
+```
+conda insall geopandas
+```
+
+### Linux / Ubuntu
+In linux/ubuntu, there can be extra dependencies of geopandas on GDAL. Here's one way to install them which worked for me:
+
+```
+sudo apt-get install python3-pip libgdal-dev locales build-essential python3-dev python3-setuptools python3-wheel
+pip3 install GDAL==2.4.2
+```
+
+If the last line errored out, try this:
+```
+pip3 install GDAL=="`gdal-config --version`.*"
+```
+
+### Alternative ways:
+- See https://github.com/nextgis/pygdal
+
+### Using Docker :
+Ensure that your shapefile is present in the same folder (or in a folder beneath)
+
+Open a terminal/command prompt, navigate it to current folder, and run these commands:
+```
+docker build -t shapes-to-poly1 .
+docker run -v $(pwd):/app -it shapes-to-poly1
+```
+This gets you into a dockerised ubuntu shell with all dependencies installed, your current directory mounted in it. Practically speaking you haven't gone anywhere; the system with the dependencies installed has just momentarily come above. You can type the command `ls -l` to see and confirm that all your files are there. Check out the `Dockerfile` in this repo to see what's happening under the hood.  
+
+You can now run the same python commands as given above. The outputs will be saved in a output/ folder in your current folder, and will stay even after you've exited the dockerised ubuntu shell.  
+
+Once done, you can get out with the `exit` command.
+
+Shout-out to https://github.com/thinkWhere/GDAL-Docker for making a gdal-friendly docker container readily available.
